@@ -1,0 +1,2285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM Pipeline Explorer - Understand How Large Language Models Work</title>
+
+  <style>
+    /* // WHAT THIS DOES: CSS Variables defining colors, gradients, and spacing for the dark developer theme */
+    :root {
+      --bg-main: #090d16;
+      --bg-card: #111827;
+      --bg-card-hover: #172237;
+      --bg-surface: #1e293b;
+      --bg-input: #0b1120;
+      --border-color: rgba(148, 163, 184, 0.14);
+      --border-hover: rgba(168, 85, 247, 0.35);
+      --border-active: rgba(56, 189, 248, 0.6);
+      
+      --accent-blue: #38bdf8;
+      --accent-blue-glow: rgba(56, 189, 248, 0.25);
+      --accent-purple: #a855f7;
+      --accent-purple-glow: rgba(168, 85, 247, 0.25);
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+      --radius-full: 9999px;
+      
+      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.25);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+      --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.45);
+      --shadow-glow: 0 0 20px rgba(56, 189, 248, 0.25);
+    }
+
+    /* // WHAT THIS DOES: CSS Reset and global layout rules for typography and smooth scrolling */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      background-color: var(--bg-main);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      line-height: 1.6;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      background: radial-gradient(circle at 15% 10%, rgba(168, 85, 247, 0.08) 0%, transparent 40%),
+                  radial-gradient(circle at 85% 30%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+                  var(--bg-main);
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    button {
+      font-family: inherit;
+      cursor: pointer;
+      border: none;
+      outline: none;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* // WHAT THIS DOES: Navigation bar and header styles with frosted glass effect and status pill */
+    header.site-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      background-color: rgba(9, 13, 22, 0.85);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 72px;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-logo-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.3);
+    }
+
+    .brand-text h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #ffffff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .brand-text p {
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: #34d399;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #10b981;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulseDot 2s infinite ease-in-out;
+    }
+
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.8); }
+    }
+
+    nav.nav-links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    nav.nav-links a {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      transition: color 0.2s ease;
+      font-weight: 500;
+    }
+
+    nav.nav-links a:hover {
+      color: var(--accent-blue);
+    }
+
+    /* // WHAT THIS DOES: Hero and Introduction section styling for the educational overview */
+    .intro-section {
+      padding: 56px 0 36px;
+      text-align: center;
+    }
+
+    .intro-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 14px;
+      border-radius: var(--radius-full);
+      background: rgba(168, 85, 247, 0.12);
+      border: 1px solid rgba(168, 85, 247, 0.28);
+      color: #d8b4fe;
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .intro-title {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+
+    .intro-title .gradient-text {
+      background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .intro-desc {
+      font-size: 1.1rem;
+      color: var(--text-secondary);
+      max-width: 680px;
+      margin: 0 auto 32px;
+    }
+
+    .intro-overview-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      max-width: 820px;
+      margin: 0 auto;
+      text-align: left;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      box-shadow: var(--shadow-md);
+    }
+
+    .overview-icon-box {
+      width: 52px;
+      height: 52px;
+      flex-shrink: 0;
+      border-radius: var(--radius-md);
+      background: rgba(56, 189, 248, 0.12);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-blue);
+    }
+
+    .overview-text h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+      color: var(--text-primary);
+    }
+
+    .overview-text p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    /* // WHAT THIS DOES: Section heading component styling used across sections */
+    .section-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    .section-header h2 {
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .section-header p {
+      font-size: 0.95rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* // WHAT THIS DOES: Interactive 5-Stage Pipeline visualization styling and connector lines */
+    .pipeline-section {
+      padding: 40px 0 60px;
+    }
+
+    .pipeline-wrapper {
+      position: relative;
+      margin-top: 24px;
+    }
+
+    .pipeline-steps-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .pipeline-connector-bar {
+      position: absolute;
+      top: 50px;
+      left: 8%;
+      right: 8%;
+      height: 3px;
+      background: rgba(148, 163, 184, 0.15);
+      z-index: 1;
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+
+    .pipeline-connector-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 0 10px var(--accent-blue);
+    }
+
+    /* // WHAT THIS DOES: Pipeline stage cards, icons, status badges, and glowing active states */
+    .stage-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      user-select: none;
+      min-height: 250px;
+    }
+
+    .stage-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-hover);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .stage-card.active {
+      border-color: var(--accent-blue);
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.35);
+      background: #131d31;
+      transform: translateY(-4px);
+    }
+
+    .stage-card.completed {
+      border-color: rgba(16, 185, 129, 0.5);
+    }
+
+    .stage-number {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      transition: all 0.2s ease;
+    }
+
+    .stage-card.active .stage-number {
+      background: var(--accent-blue);
+      color: #090d16;
+      border-color: var(--accent-blue);
+      font-weight: 800;
+      box-shadow: 0 0 10px var(--accent-blue);
+    }
+
+    .stage-card.completed .stage-number {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border-color: #10b981;
+    }
+
+    .stage-icon-box {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      background: rgba(148, 163, 184, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-blue);
+      margin-bottom: 14px;
+      transition: all 0.25s ease;
+    }
+
+    .stage-card.active .stage-icon-box {
+      background: rgba(56, 189, 248, 0.2);
+      color: #ffffff;
+      transform: scale(1.1);
+    }
+
+    .stage-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .stage-summary {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.45;
+      margin-bottom: 16px;
+      flex-grow: 1;
+    }
+
+    .stage-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      background: rgba(148, 163, 184, 0.1);
+      color: var(--text-muted);
+      border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .stage-card.active .stage-badge {
+      background: rgba(56, 189, 248, 0.18);
+      color: var(--accent-blue);
+      border-color: rgba(56, 189, 248, 0.35);
+    }
+
+    .stage-card.completed .stage-badge {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .click-hint {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 8px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* // WHAT THIS DOES: Prompt Playground styling including textarea, sample buttons, and control actions */
+    .playground-section {
+      padding: 40px 0 60px;
+    }
+
+    .playground-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .input-label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .input-label-row label {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .char-counter {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    .prompt-textarea {
+      width: 100%;
+      height: 110px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 0.98rem;
+      resize: vertical;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      line-height: 1.5;
+    }
+
+    .prompt-textarea:focus {
+      outline: none;
+      border-color: var(--accent-purple);
+      box-shadow: 0 0 15px rgba(168, 85, 247, 0.25);
+    }
+
+    .validation-alert {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: var(--radius-md);
+      background: rgba(244, 63, 94, 0.12);
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      color: #fda4af;
+      font-size: 0.85rem;
+      margin-top: 10px;
+    }
+
+    .validation-alert.visible {
+      display: flex;
+    }
+
+    .quick-samples {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin: 16px 0 20px;
+    }
+
+    .quick-samples-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .sample-pill {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 0.78rem;
+      padding: 5px 12px;
+      border-radius: var(--radius-full);
+      transition: all 0.2s ease;
+    }
+
+    .sample-pill:hover {
+      background: var(--bg-card-hover);
+      color: var(--accent-blue);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    .button-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .btn-run {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 24px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--accent-purple), #7c3aed);
+      color: #ffffff;
+      font-size: 0.92rem;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .btn-run:hover:not(:disabled) {
+      filter: brightness(1.12);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(168, 85, 247, 0.45);
+    }
+
+    .btn-run:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-reset {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 11px 20px;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+
+    .btn-reset:hover {
+      background: var(--bg-card-hover);
+      color: var(--text-primary);
+      border-color: rgba(148, 163, 184, 0.3);
+    }
+
+    /* // WHAT THIS DOES: Execution progress bar and dynamic stage inspector panel */
+    .execution-tracker {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .progress-status-label {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .progress-status-label span.highlight {
+      color: var(--accent-blue);
+    }
+
+    .progress-bar-bg {
+      width: 100%;
+      height: 6px;
+      background: var(--bg-surface);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin-bottom: 20px;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+      transition: width 0.4s ease;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+    }
+
+    .stage-inspector-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+
+    .inspector-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .inspector-title {
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent-purple);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .inspector-content {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    /* // WHAT THIS DOES: Dynamic token breakdown boxes displayed inside stage inspector and token explorer */
+    .token-box-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin: 12px 0;
+      max-height: 220px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+
+    .token-pill {
+      display: inline-flex;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid transparent;
+      user-select: text;
+      transition: transform 0.15s ease;
+      white-space: pre;
+    }
+
+    .token-pill:hover {
+      transform: translateY(-2px);
+      filter: brightness(1.2);
+    }
+
+    /* Tint variations for token chips */
+    .token-tint-0 { background: rgba(56, 189, 248, 0.16); color: #7dd3fc; border-color: rgba(56, 189, 248, 0.35); }
+    .token-tint-1 { background: rgba(168, 85, 247, 0.16); color: #d8b4fe; border-color: rgba(168, 85, 247, 0.35); }
+    .token-tint-2 { background: rgba(16, 185, 129, 0.16); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.35); }
+    .token-tint-3 { background: rgba(245, 158, 11, 0.16); color: #fcd34d; border-color: rgba(245, 158, 11, 0.35); }
+    .token-tint-4 { background: rgba(244, 63, 94, 0.16); color: #fda4af; border-color: rgba(244, 63, 94, 0.35); }
+    .token-tint-5 { background: rgba(99, 102, 241, 0.16); color: #a5b4fc; border-color: rgba(99, 102, 241, 0.35); }
+
+    /* Prediction probability table inside Stage 4 inspector */
+    .prediction-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .pred-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 0.82rem;
+      font-family: var(--font-mono);
+    }
+
+    .pred-token {
+      width: 110px;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .pred-bar-bg {
+      flex-grow: 1;
+      height: 8px;
+      background: var(--bg-surface);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+
+    .pred-bar-fill {
+      height: 100%;
+      border-radius: var(--radius-full);
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+    }
+
+    .pred-percent {
+      width: 48px;
+      text-align: right;
+      color: var(--accent-blue);
+      font-weight: 600;
+    }
+
+    /* // WHAT THIS DOES: Output response panel with streaming typewriter effect and metrics */
+    .output-panel {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      margin-top: 14px;
+    }
+
+    .output-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+    }
+
+    .output-header-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .output-badge {
+      font-size: 0.74rem;
+      padding: 3px 10px;
+      border-radius: var(--radius-full);
+      background: rgba(148, 163, 184, 0.1);
+      color: var(--text-muted);
+    }
+
+    .output-badge.streaming {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent-blue);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .output-badge.done {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .output-text-stream {
+      min-height: 80px;
+      font-size: 0.95rem;
+      line-height: 1.65;
+      color: #e2e8f0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .cursor-blink {
+      display: inline-block;
+      width: 2px;
+      height: 1.1em;
+      background-color: var(--accent-blue);
+      vertical-align: text-bottom;
+      margin-left: 2px;
+      animation: blinkCursor 0.8s infinite;
+    }
+
+    @keyframes blinkCursor {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    .output-metrics-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(148, 163, 184, 0.08);
+      font-size: 0.78rem;
+      color: var(--text-muted);
+    }
+
+    .metric-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .metric-value {
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    /* // WHAT THIS DOES: Token Explorer section styling with interactive token badges and stat counters */
+    .tokens-section {
+      padding: 40px 0 60px;
+    }
+
+    .token-grid-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .token-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      flex-direction: column;
+    }
+
+    .token-card h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .token-card p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+      margin-bottom: 14px;
+    }
+
+    .token-card ul {
+      margin-left: 20px;
+      margin-bottom: 16px;
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+    }
+
+    .token-card ul li {
+      margin-bottom: 8px;
+    }
+
+    .token-card ul li strong {
+      color: var(--text-primary);
+    }
+
+    .token-input-field {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      font-family: inherit;
+      margin-bottom: 12px;
+    }
+
+    .token-input-field:focus {
+      outline: none;
+      border-color: var(--accent-blue);
+    }
+
+    .token-stats-bar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 14px;
+      background: var(--bg-surface);
+      border-radius: var(--radius-md);
+      margin-top: 12px;
+      font-size: 0.8rem;
+      font-family: var(--font-mono);
+    }
+
+    .disclaimer-box {
+      margin-top: 16px;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.25);
+      color: #fcd34d;
+      font-size: 0.82rem;
+      line-height: 1.45;
+    }
+
+    /* // WHAT THIS DOES: Learn More educational card grid and responsive cards */
+    .learn-section {
+      padding: 40px 0 60px;
+    }
+
+    .learn-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .learn-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .learn-card:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--border-hover);
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .learn-icon-circle {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      background: rgba(168, 85, 247, 0.12);
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-purple);
+      margin-bottom: 16px;
+    }
+
+    .learn-card h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--text-primary);
+    }
+
+    .learn-card p {
+      font-size: 0.88rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 14px;
+      flex-grow: 1;
+    }
+
+    .learn-card .takeaway-pill {
+      font-size: 0.76rem;
+      font-weight: 600;
+      color: var(--accent-blue);
+      background: rgba(56, 189, 248, 0.1);
+      padding: 6px 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+
+    /* // WHAT THIS DOES: Stage details modal window for deep-dive educational explanations */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(5, 8, 15, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+    }
+
+    .modal-window {
+      background: var(--bg-card);
+      border: 1px solid rgba(168, 85, 247, 0.35);
+      border-radius: var(--radius-lg);
+      width: 100%;
+      max-width: 620px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+      overflow: hidden;
+      animation: modalPop 0.25s ease-out;
+    }
+
+    @keyframes modalPop {
+      0% { opacity: 0; transform: scale(0.95); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-header {
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--bg-surface);
+    }
+
+    .modal-header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .modal-step-tag {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--accent-blue);
+      background: rgba(56, 189, 248, 0.15);
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+
+    .modal-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .btn-close-modal {
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 1.4rem;
+      line-height: 1;
+      padding: 4px;
+      border-radius: var(--radius-sm);
+      transition: color 0.15s ease;
+    }
+
+    .btn-close-modal:hover {
+      color: var(--text-primary);
+    }
+
+    .modal-body {
+      padding: 24px;
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .modal-section-block {
+      margin-bottom: 20px;
+    }
+
+    .modal-section-block h4 {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--accent-purple);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .modal-section-block p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .analogy-card {
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      font-size: 0.88rem;
+      color: #bae6fd;
+      line-height: 1.5;
+    }
+
+    .modal-footer {
+      padding: 16px 24px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+      background: var(--bg-surface);
+    }
+
+    .btn-modal-gotit {
+      padding: 8px 18px;
+      border-radius: var(--radius-md);
+      background: var(--accent-blue);
+      color: #090d16;
+      font-weight: 600;
+      font-size: 0.88rem;
+    }
+
+    /* // WHAT THIS DOES: Footer styling with project attribution and educational disclaimer */
+    footer.site-footer {
+      margin-top: auto;
+      border-top: 1px solid var(--border-color);
+      background: rgba(9, 13, 22, 0.9);
+      padding: 32px 0;
+      text-align: center;
+    }
+
+    .footer-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .footer-main-text {
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .footer-sub-text {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      max-width: 580px;
+    }
+
+    /* // WHAT THIS DOES: Responsive media queries for mobile phones, tablets, and desktop displays */
+    @media (max-width: 1024px) {
+      .pipeline-steps-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      .pipeline-connector-bar {
+        display: none;
+      }
+      .learn-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 768px) {
+      .header-inner {
+        height: auto;
+        padding: 14px 0;
+        flex-direction: column;
+        gap: 12px;
+      }
+      nav.nav-links {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 14px;
+      }
+      .intro-title {
+        font-size: 1.9rem;
+      }
+      .intro-overview-card {
+        flex-direction: column;
+        text-align: center;
+      }
+      .pipeline-steps-grid {
+        grid-template-columns: 1fr;
+      }
+      .token-grid-layout {
+        grid-template-columns: 1fr;
+      }
+      .learn-cards-grid {
+        grid-template-columns: 1fr;
+      }
+      .button-group {
+        flex-direction: column;
+        width: 100%;
+      }
+      .btn-run, .btn-reset {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- // WHAT THIS DOES: Navigation header with website title, demo status badge, and smooth scroll links -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <div class="brand-wrap">
+        <div class="brand-logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+            <line x1="8" y1="21" x2="16" y2="21"></line>
+            <line x1="12" y1="17" x2="12" y2="21"></line>
+            <polyline points="7 10 10 13 17 6"></polyline>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>LLM Pipeline Explorer</h1>
+          <p>Understand how Large Language Models work</p>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="status-pill">
+          <span class="status-dot"></span>
+          <span>Interactive Demo</span>
+        </div>
+        <nav class="nav-links">
+          <a href="#pipeline">Pipeline</a>
+          <a href="#playground">Playground</a>
+          <a href="#tokens">Tokens</a>
+          <a href="#learn">Learn More</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- // WHAT THIS DOES: Introduction section explaining how LLMs take input and generate text -->
+    <section class="intro-section" id="introduction">
+      <div class="container">
+        <div class="intro-badge">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 16v-4"></path>
+            <path d="M12 8h.01"></path>
+          </svg>
+          Educational Architecture
+        </div>
+        <h2 class="intro-title">Explore How <span class="gradient-text">LLMs Think</span></h2>
+        <p class="intro-desc">
+          Follow the journey of a prompt as it moves through the different stages of a Large Language Model pipeline.
+        </p>
+
+        <div class="intro-overview-card">
+          <div class="overview-icon-box">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+          </div>
+          <div class="overview-text">
+            <h3>How Generative AI Operates Behind the Scenes</h3>
+            <p>
+              An LLM is not a magic crystal ball. It is an advanced mathematical neural network that takes your raw input text, converts it into structured numerical chunks called <strong>tokens</strong>, calculates statistical probabilities using learned patterns, and predicts the response one token at a time.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- // WHAT THIS DOES: Interactive 5-Stage Pipeline visualization showing the journey of a prompt -->
+    <section class="pipeline-section" id="pipeline">
+      <div class="container">
+        <div class="section-header">
+          <h2>Interactive Pipeline Visualization</h2>
+          <p>Click on any stage card below to inspect what happens during that phase of execution.</p>
+        </div>
+
+        <div class="pipeline-wrapper">
+          <div class="pipeline-connector-bar">
+            <div class="pipeline-connector-fill" id="pipelineConnectorFill"></div>
+          </div>
+
+          <div class="pipeline-steps-grid">
+            <!-- Stage 1: User Input -->
+            <div class="stage-card" id="stageCard1" onclick="openStageModal(1)">
+              <div class="stage-number" id="stageNum1">1</div>
+              <div class="stage-icon-box">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </div>
+              <h3 class="stage-title">USER INPUT</h3>
+              <p class="stage-summary">The user enters a natural text prompt, question, or command.</p>
+              <span class="stage-badge" id="stageBadge1">Waiting</span>
+              <span class="click-hint">Click for details ↗</span>
+            </div>
+
+            <!-- Stage 2: Prompt Processing -->
+            <div class="stage-card" id="stageCard2" onclick="openStageModal(2)">
+              <div class="stage-number" id="stageNum2">2</div>
+              <div class="stage-icon-box">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="4 7 4 4 20 4 20 7"></polyline>
+                  <line x1="9" y1="20" x2="15" y2="20"></line>
+                  <line x1="12" y1="4" x2="12" y2="20"></line>
+                </svg>
+              </div>
+              <h3 class="stage-title">PROMPT PROCESSING</h3>
+              <p class="stage-summary">Input is structured into a chat template with system instructions.</p>
+              <span class="stage-badge" id="stageBadge2">Waiting</span>
+              <span class="click-hint">Click for details ↗</span>
+            </div>
+
+            <!-- Stage 3: Tokenization -->
+            <div class="stage-card" id="stageCard3" onclick="openStageModal(3)">
+              <div class="stage-number" id="stageNum3">3</div>
+              <div class="stage-icon-box">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="3" width="7" height="7"></rect>
+                  <rect x="14" y="14" width="7" height="7"></rect>
+                  <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+              </div>
+              <h3 class="stage-title">TOKENIZATION</h3>
+              <p class="stage-summary">Text is split into subword tokens and mapped to numerical IDs.</p>
+              <span class="stage-badge" id="stageBadge3">Waiting</span>
+              <span class="click-hint">Click for details ↗</span>
+            </div>
+
+            <!-- Stage 4: LLM Processing -->
+            <div class="stage-card" id="stageCard4" onclick="openStageModal(4)">
+              <div class="stage-number" id="stageNum4">4</div>
+              <div class="stage-icon-box">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"></path>
+                </svg>
+              </div>
+              <h3 class="stage-title">LLM PROCESSING</h3>
+              <p class="stage-summary">Neural attention weighs patterns to predict next-token probabilities.</p>
+              <span class="stage-badge" id="stageBadge4">Waiting</span>
+              <span class="click-hint">Click for details ↗</span>
+            </div>
+
+            <!-- Stage 5: Generated Output -->
+            <div class="stage-card" id="stageCard5" onclick="openStageModal(5)">
+              <div class="stage-number" id="stageNum5">5</div>
+              <div class="stage-icon-box">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+              </div>
+              <h3 class="stage-title">GENERATED OUTPUT</h3>
+              <p class="stage-summary">Predicted tokens are detokenized back into human-readable text.</p>
+              <span class="stage-badge" id="stageBadge5">Waiting</span>
+              <span class="click-hint">Click for details ↗</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- // WHAT THIS DOES: Prompt Playground where users type prompts and trigger the pipeline execution -->
+    <section class="playground-section" id="playground">
+      <div class="container">
+        <div class="section-header">
+          <h2>Prompt Playground</h2>
+          <p>Type a prompt and watch how each phase of the model pipeline executes sequentially.</p>
+        </div>
+
+        <div class="playground-card">
+          <div class="input-label-row">
+            <label for="promptInput">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              User Prompt
+            </label>
+            <span class="char-counter" id="charCounter">0 characters</span>
+          </div>
+
+          <textarea 
+            id="promptInput" 
+            class="prompt-textarea" 
+            placeholder="Ask something, e.g. Explain artificial intelligence in simple words..."
+          ></textarea>
+
+          <div class="validation-alert" id="validationAlert">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+            <span>Please enter a prompt before running the pipeline simulation.</span>
+          </div>
+
+          <div class="quick-samples">
+            <span class="quick-samples-label">Try an example:</span>
+            <button class="sample-pill" type="button" onclick="loadSamplePrompt('Explain artificial intelligence in simple words')">💡 What is AI?</button>
+            <button class="sample-pill" type="button" onclick="loadSamplePrompt('What is Python and why do programmers use it?')">🐍 Python Basics</button>
+            <button class="sample-pill" type="button" onclick="loadSamplePrompt('Write a short haiku about coding')">📜 Coding Haiku</button>
+            <button class="sample-pill" type="button" onclick="loadSamplePrompt('Why is the sky blue during the day?')">🌤️ Why Sky is Blue</button>
+          </div>
+
+          <div class="button-group">
+            <button id="btnRun" class="btn-run" type="button" onclick="runPipeline()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3"></polygon>
+              </svg>
+              Run Pipeline
+            </button>
+            <button id="btnReset" class="btn-reset" type="button" onclick="resetPipeline()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 2v6h6"></path>
+                <path d="M21 12A9 9 0 0 0 6 5.3L3 8"></path>
+                <path d="M21 22v-6h-6"></path>
+                <path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"></path>
+              </svg>
+              Reset
+            </button>
+          </div>
+
+          <!-- Execution Tracker -->
+          <div class="execution-tracker">
+            <div class="progress-header">
+              <div class="progress-status-label" id="pipelineStatusText">
+                Status: <span class="highlight">Ready for input</span>
+              </div>
+              <div class="char-counter" id="progressPercentage">0% Complete</div>
+            </div>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="progressBarFill"></div>
+            </div>
+
+            <!-- Dynamic Inspector Box showing data for current active stage -->
+            <div class="stage-inspector-box" id="stageInspectorBox">
+              <div class="inspector-top">
+                <span class="inspector-title" id="inspectorTitle">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                  </svg>
+                  Current Stage Inspector
+                </span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);" id="inspectorSub">Live simulation data</span>
+              </div>
+              <div class="inspector-content" id="inspectorContent">
+                Enter your prompt above and click <strong>"Run Pipeline"</strong> to see each stage generate its dynamic data here.
+              </div>
+            </div>
+
+            <!-- Output Display -->
+            <div class="output-panel">
+              <div class="output-top-row">
+                <div class="output-header-title">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="4 17 10 11 4 5"></polyline>
+                    <line x1="12" y1="19" x2="20" y2="19"></line>
+                  </svg>
+                  Generated Assistant Response (Detokenized Text)
+                </div>
+                <span class="output-badge" id="outputStatusBadge">Idle</span>
+              </div>
+              <div class="output-text-stream" id="outputTextStream">The simulated response will appear here as tokens are generated...</div>
+              <div class="output-metrics-row">
+                <div class="metric-item">
+                  <span>Input Tokens:</span>
+                  <span class="metric-value" id="metricInputTokens">0</span>
+                </div>
+                <div class="metric-item">
+                  <span>Output Tokens:</span>
+                  <span class="metric-value" id="metricOutputTokens">0</span>
+                </div>
+                <div class="metric-item">
+                  <span>Total Tokens:</span>
+                  <span class="metric-value" id="metricTotalTokens">0</span>
+                </div>
+                <div class="metric-item">
+                  <span>Simulated Latency:</span>
+                  <span class="metric-value" id="metricLatency">-- ms</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- // WHAT THIS DOES: Token Explorer explaining tokens with an interactive breakdown tool -->
+    <section class="tokens-section" id="tokens">
+      <div class="container">
+        <div class="section-header">
+          <h2>Token Explorer</h2>
+          <p>Understand the fundamental atomic unit of information that Large Language Models read and write.</p>
+        </div>
+
+        <div class="token-grid-layout">
+          <!-- Left Card: What and Why -->
+          <div class="token-card">
+            <h3>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+              </svg>
+              What is a Token?
+            </h3>
+            <p>
+              Computers do not understand text, feelings, or meaning; they only calculate numbers. A <strong>token</strong> is a chunk of text that an LLM turns into a unique integer ID.
+            </p>
+            <ul>
+              <li><strong>Words vs Tokens:</strong> A token can be as short as one character (<code>"a"</code>) or as long as a whole word (<code>"apple"</code>). In English, 1 token is roughly 4 characters or ~0.75 words.</li>
+              <li><strong>Subwords:</strong> Complex or rare words get chopped into pieces. For example, <code>"tokenization"</code> is split into <code>"token"</code> and <code>"ization"</code>.</li>
+              <li><strong>Why LLMs use tokens:</strong> Tokens strike the perfect balance between keeping the vocabulary size manageable while handling typos, rare words, and multiple languages efficiently.</li>
+            </ul>
+            <div class="disclaimer-box">
+              <strong>Notice:</strong> This interactive visualizer uses a heuristic educational tokenizer designed for demonstration. Real models (like GPT-4, Gemini, or Claude) use byte-pair encoding (BPE) vocabularies of over 32,000 to 100,000 token entries.
+            </div>
+          </div>
+
+          <!-- Right Card: Live Interactive Token Sandbox -->
+          <div class="token-card">
+            <h3>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+              </svg>
+              Live Token Breakdown
+            </h3>
+            <p>Type any phrase to see it dynamically decomposed into approximate visual tokens:</p>
+            
+            <input 
+              type="text" 
+              id="tokenExplorerInput" 
+              class="token-input-field" 
+              value="Large Language Models process tokens, not words!" 
+              placeholder="Type anything here..."
+            />
+
+            <div class="token-box-container" id="tokenExplorerBox">
+              <!-- Dynamically populated -->
+            </div>
+
+            <div class="token-stats-bar">
+              <div>Tokens: <strong style="color: var(--accent-blue);" id="explorerTokenCount">0</strong></div>
+              <div>Characters: <strong style="color: var(--accent-purple);" id="explorerCharCount">0</strong></div>
+              <div>Ratio: <strong style="color: #6ee7b7;" id="explorerRatio">0</strong> chars/token</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- // WHAT THIS DOES: Learn More educational section with three in-depth concept cards -->
+    <section class="learn-section" id="learn">
+      <div class="container">
+        <div class="section-header">
+          <h2>Learn More</h2>
+          <p>Key foundational concepts simplified for first-semester computer science students.</p>
+        </div>
+
+        <div class="learn-cards-grid">
+          <!-- Card 1 -->
+          <div class="learn-card">
+            <div class="learn-icon-circle">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
+                <path d="M12 12 2.1 7.1"></path>
+              </svg>
+            </div>
+            <h3>1. What is an LLM?</h3>
+            <p>
+              A <strong>Large Language Model (LLM)</strong> is a deep neural network containing billions of mathematical weights trained on massive amounts of text. By analyzing sentence patterns across the internet, it learns grammatical rules, facts, and logical associations.
+            </p>
+            <div class="takeaway-pill">Key Concept: Neural weights & statistical patterns</div>
+          </div>
+
+          <!-- Card 2 -->
+          <div class="learn-card">
+            <div class="learn-icon-circle">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                <line x1="9" y1="3" x2="9" y2="21"></line>
+              </svg>
+            </div>
+            <h3>2. What is a Token?</h3>
+            <p>
+              A <strong>token</strong> is the atomic unit of text comprehension. Processing individual characters requires too many computing steps, while whole words make vocabularies impossibly large. Subword tokenization represents the optimal computational middle ground.
+            </p>
+            <div class="takeaway-pill">Key Concept: Subword vocabulary matrix mapping</div>
+          </div>
+
+          <!-- Card 3 -->
+          <div class="learn-card">
+            <div class="learn-icon-circle">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+            </div>
+            <h3>3. Next-Token Prediction</h3>
+            <p>
+              At its core, an LLM generates text through <strong>next-token prediction</strong>. Given all preceding tokens, it calculates a probability score for every word in its vocabulary, picks the best candidate, appends it to the prompt, and repeats the loop autoregressively.
+            </p>
+            <div class="takeaway-pill">Key Concept: Autoregressive probability generation</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- // WHAT THIS DOES: Educational detail modal popup displayed when clicking any pipeline stage -->
+  <div class="modal-backdrop" id="stageDetailModal" onclick="closeModalOnBackdrop(event)">
+    <div class="modal-window">
+      <div class="modal-header">
+        <div class="modal-header-left">
+          <span class="modal-step-tag" id="modalStageTag">Stage 01</span>
+          <h3 class="modal-title" id="modalStageTitle">Stage Title</h3>
+        </div>
+        <button class="btn-close-modal" type="button" onclick="closeStageModal()">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="modal-section-block">
+          <h4>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+            </svg>
+            What Happens in this Stage?
+          </h4>
+          <p id="modalWhatHappens">Description of what happens.</p>
+        </div>
+
+        <div class="modal-section-block">
+          <h4>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+              <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+              <line x1="6" y1="6" x2="6.01" y2="6"></line>
+              <line x1="6" y1="18" x2="6.01" y2="18"></line>
+            </svg>
+            Key Technical Concepts
+          </h4>
+          <p id="modalConcepts">Key concepts.</p>
+        </div>
+
+        <div class="modal-section-block">
+          <h4>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"></path>
+            </svg>
+            Beginner Analogy
+          </h4>
+          <div class="analogy-card" id="modalAnalogy">
+            Analogy text for first-semester students.
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-modal-gotit" type="button" onclick="closeStageModal()">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- // WHAT THIS DOES: Footer with project learning note and educational simulation disclaimer -->
+  <footer class="site-footer">
+    <div class="container footer-content">
+      <p class="footer-main-text">Built as a learning project | LLM Pipeline Explorer</p>
+      <p class="footer-sub-text">
+        This project demonstrates a simplified visual simulation of an LLM pipeline. No live external AI APIs or paid keys are used.
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // WHAT THIS DOES: Educational stage details database explaining what happens at each pipeline stage
+    const STAGE_DETAILS = {
+      1: {
+        tag: "Stage 01",
+        title: "USER INPUT",
+        what: "The pipeline begins when a user submits arbitrary natural language text. This can range from a short greeting to a complex programming question. The system receives this raw string of Unicode characters exactly as typed.",
+        concepts: "Raw string encoding, input character limits, context window constraints, and user intent capture.",
+        analogy: "Like writing a question on an exam paper and handing it to your professor. The professor has not yet analyzed your question; they have simply received the raw text."
+      },
+      2: {
+        tag: "Stage 02",
+        title: "PROMPT PROCESSING",
+        what: "Before tokenization, the user's raw text is wrapped into a structured chat template (such as ChatML). Special role delimiters (<|im_start|>system, <|im_start|>user, and <|im_start|>assistant) are added to separate user input from system guidelines and indicate when the assistant should answer.",
+        concepts: "Chat templates (ChatML), role delimiters, system prompts, and conversation structure.",
+        analogy: "Like labeling an assignment with official headers ('Teacher Instructions', 'Student Question') so everyone knows who is speaking."
+      },
+      3: {
+        tag: "Stage 03",
+        title: "TOKENIZATION",
+        what: "Neural networks cannot directly process text strings or alphabets; they only perform linear algebra on numbers. During tokenization, the formatted text is split into subword units called tokens using algorithms like Byte-Pair Encoding (BPE), and each token is converted into its vocabulary integer ID.",
+        concepts: "Subword tokenization, vocabulary dictionary lookup, token IDs, and vector embedding tables.",
+        analogy: "Like breaking a sentence into individual Lego bricks. Each unique Lego brick shape has a specific catalog number so a robot can assemble them."
+      },
+      4: {
+        tag: "Stage 04",
+        title: "LLM PROCESSING (NEXT-TOKEN PREDICTION)",
+        what: "The token IDs are fed into billions of transformer parameters. Self-attention layers compute how words relate to each other regardless of sentence position. The final layer outputs a probability distribution over the entire vocabulary to predict which token should come next.",
+        concepts: "Transformer architecture, self-attention mechanisms, neural weights, logits, softmax probability distribution, and temperature sampling.",
+        analogy: "Like a supercharged autocomplete. Based on thousands of books it has read, the model calculates that after 'Once upon a', the word 'time' has a 94% probability."
+      },
+      5: {
+        tag: "Stage 05",
+        title: "GENERATED OUTPUT",
+        what: "The highest probability predicted token (or sampled token based on temperature) is appended to the sequence. That token is mapped from its numerical ID back to readable characters (detokenization). The process loops autoregressively until an <end_of_text> token is produced.",
+        concepts: "Detokenization, autoregressive generation loop, stop tokens, and streaming text output.",
+        analogy: "Like a classic typewriter printing out the predicted words one by one onto the paper until the paragraph is complete."
+      }
+    };
+
+    // WHAT THIS DOES: Simulated educational responses tailored to user prompts
+    const SAMPLE_RESPONSES = {
+      ai: "Artificial Intelligence (AI) refers to computer systems engineered to simulate human intelligence. Rather than relying on rigid manual rules, modern AI uses neural networks to learn patterns from vast amounts of data, enabling it to recognize speech, solve complex problems, and generate human-like text.",
+      python: "Python is a popular high-level programming language known for its clean, English-like syntax and readability. Because it is simple to learn yet powerful, Python is the primary language used in data science, artificial intelligence, web development, and beginner computer science courses.",
+      haiku: "Glow of lines and code,\nTokens leap through neural paths,\nAnswers come alive.",
+      sky: "The sky appears blue because of a physical phenomenon known as Rayleigh scattering. Sunlight consists of all colors of the rainbow, but Earth's atmospheric gases scatter shorter wavelengths (blue and violet) in all directions much more effectively than longer wavelengths (red and orange)."
+    };
+
+    // Global pipeline execution state variables
+    let isPipelineRunning = false;
+    let activeTimeouts = [];
+
+    // WHAT THIS DOES: Simulated tokenizer function that breaks text into illustrative tokens
+    function tokenizeText(text) {
+      if (!text || text.trim() === "") return [];
+
+      // Split into words, punctuation, and spaces
+      // Match words, numbers, or individual punctuation symbols
+      const regex = /([a-zA-Z0-9]+|[\s]+|[^\s\w])/g;
+      const rawMatches = text.match(regex) || [];
+      const tokens = [];
+
+      // Subword splitting heuristic for longer words (> 6 chars)
+      const commonPrefixes = ["inter", "trans", "under", "super", "multi", "auto", "micro", "anti", "pre", "un", "re", "sub", "pro"];
+      const commonSuffixes = ["ization", "action", "ement", "ation", "ness", "able", "ible", "ment", "ting", "ning", "ling", "ing", "tion", "sion", "ize", "ise", "est", "ful", "less", "ous", "ive", "ed", "er", "ly", "al"];
+
+      rawMatches.forEach((chunk) => {
+        // If it's pure whitespace, preserve as visible token space or symbol
+        if (/^\s+$/.test(chunk)) {
+          tokens.push(chunk);
+          return;
+        }
+
+        // If it's punctuation, keep as individual token
+        if (/^[^\s\w]$/.test(chunk)) {
+          tokens.push(chunk);
+          return;
+        }
+
+        const lower = chunk.toLowerCase();
+        
+        // If word is short (<= 5 characters), keep as single token
+        if (chunk.length <= 5) {
+          tokens.push(chunk);
+          return;
+        }
+
+        // Attempt subword splitting
+        let matched = false;
+
+        // Check suffix first
+        for (const suffix of commonSuffixes) {
+          if (lower.endsWith(suffix) && chunk.length > suffix.length + 2) {
+            const stem = chunk.slice(0, chunk.length - suffix.length);
+            const suffPart = chunk.slice(chunk.length - suffix.length);
+            tokens.push(stem);
+            tokens.push(suffPart);
+            matched = true;
+            break;
+          }
+        }
+
+        if (!matched) {
+          // Check prefix
+          for (const prefix of commonPrefixes) {
+            if (lower.startsWith(prefix) && chunk.length > prefix.length + 2) {
+              const prefPart = chunk.slice(0, prefix.length);
+              const remainder = chunk.slice(prefix.length);
+              tokens.push(prefPart);
+              tokens.push(remainder);
+              matched = true;
+              break;
+            }
+          }
+        }
+
+        // If no prefix/suffix matched but word is long (> 8 chars), split in half
+        if (!matched && chunk.length >= 8) {
+          const mid = Math.ceil(chunk.length / 2);
+          tokens.push(chunk.slice(0, mid));
+          tokens.push(chunk.slice(mid));
+          matched = true;
+        }
+
+        if (!matched) {
+          tokens.push(chunk);
+        }
+      });
+
+      return tokens;
+    }
+
+    // WHAT THIS DOES: Render token chips into an HTML container with alternating color tints
+    function renderTokenPills(containerElement, tokens) {
+      containerElement.innerHTML = "";
+      if (!tokens || tokens.length === 0) {
+        containerElement.innerHTML = '<span style="font-size:0.8rem; color:var(--text-muted);">No tokens to display</span>';
+        return;
+      }
+
+      tokens.forEach((token, index) => {
+        const span = document.createElement("span");
+        const tintClass = "token-tint-" + (index % 6);
+        span.className = `token-pill ${tintClass}`;
+        
+        // Render whitespace clearly if present
+        if (token === " ") {
+          span.textContent = "␣";
+          span.title = `Token #${index + 1}: Space`;
+        } else if (token === "\n") {
+          span.textContent = "\\n";
+          span.title = `Token #${index + 1}: Newline`;
+        } else {
+          span.textContent = token;
+          span.title = `Token #${index + 1} ("${token}")`;
+        }
+        
+        containerElement.appendChild(span);
+      });
+    }
+
+    // WHAT THIS DOES: Generate a relevant educational response based on keywords in prompt
+    function generateSimulatedResponse(prompt) {
+      const lower = prompt.toLowerCase();
+      if (lower.includes("ai") || lower.includes("artificial intelligence") || lower.includes("intelligence")) {
+        return SAMPLE_RESPONSES.ai;
+      }
+      if (lower.includes("python") || lower.includes("code") || lower.includes("programming")) {
+        return SAMPLE_RESPONSES.python;
+      }
+      if (lower.includes("haiku") || lower.includes("poem")) {
+        return SAMPLE_RESPONSES.haiku;
+      }
+      if (lower.includes("sky") || lower.includes("blue")) {
+        return SAMPLE_RESPONSES.sky;
+      }
+
+      // Default contextual response
+      return `To answer your prompt ("${prompt.slice(0, 35)}..."): An LLM processes this query through five sequential phases. It formats your text with chat templates, segments it into numerical tokens, runs attention calculations to weigh word context, predicts candidate tokens sequentially, and detokenizes the resulting sequence into this final coherent response.`;
+    }
+
+    // WHAT THIS DOES: Update visual appearance of pipeline stage cards and connecting bar
+    function setPipelineStageState(stageIndex, state) {
+      // state: 'waiting' | 'active' | 'completed'
+      const card = document.getElementById(`stageCard${stageIndex}`);
+      const badge = document.getElementById(`stageBadge${stageIndex}`);
+      const num = document.getElementById(`stageNum${stageIndex}`);
+
+      if (!card || !badge) return;
+
+      card.classList.remove("active", "completed");
+
+      if (state === "active") {
+        card.classList.add("active");
+        badge.textContent = "Processing...";
+        num.textContent = stageIndex;
+      } else if (state === "completed") {
+        card.classList.add("completed");
+        badge.textContent = "Completed ✓";
+        num.textContent = "✓";
+      } else {
+        badge.textContent = "Waiting";
+        num.textContent = stageIndex;
+      }
+
+      // Update connector line width
+      const connector = document.getElementById("pipelineConnectorFill");
+      if (connector) {
+        const fillPercents = [0, 20, 40, 60, 80, 100];
+        connector.style.width = fillPercents[stageIndex] + "%";
+      }
+    }
+
+    // WHAT THIS DOES: Stream text character by character to create a realistic typewriter effect
+    function streamOutputText(text, onComplete) {
+      const outputElem = document.getElementById("outputTextStream");
+      const badge = document.getElementById("outputStatusBadge");
+      outputElem.textContent = "";
+      
+      badge.className = "output-badge streaming";
+      badge.textContent = "Streaming Tokens...";
+
+      let currentIndex = 0;
+      const speedMs = 18; // Speed of each character in ms
+
+      function typeNextChar() {
+        if (currentIndex < text.length) {
+          outputElem.textContent = text.slice(0, currentIndex + 1);
+          currentIndex++;
+          const tId = setTimeout(typeNextChar, speedMs);
+          activeTimeouts.push(tId);
+        } else {
+          badge.className = "output-badge done";
+          badge.textContent = "Completed";
+          if (onComplete) onComplete();
+        }
+      }
+
+      typeNextChar();
+    }
+
+    // WHAT THIS DOES: Pipeline execution controller that sequences through all five stages with delays
+    function runPipeline() {
+      if (isPipelineRunning) return;
+
+      const input = document.getElementById("promptInput").value.trim();
+      const validationAlert = document.getElementById("validationAlert");
+
+      // Step 1: Input Validation
+      if (!input) {
+        validationAlert.classList.add("visible");
+        document.getElementById("promptInput").focus();
+        return;
+      }
+      validationAlert.classList.remove("visible");
+
+      // Mark processing flag and lock Run button
+      isPipelineRunning = true;
+      document.getElementById("btnRun").disabled = true;
+
+      // Reset any previous visual states
+      for (let i = 1; i <= 5; i++) {
+        setPipelineStageState(i, "waiting");
+      }
+
+      const statusText = document.getElementById("pipelineStatusText");
+      const progressBar = document.getElementById("progressBarFill");
+      const progressPercent = document.getElementById("progressPercentage");
+      const inspectorTitle = document.getElementById("inspectorTitle");
+      const inspectorContent = document.getElementById("inspectorContent");
+      const outputElem = document.getElementById("outputTextStream");
+
+      outputElem.textContent = "Preparing model response...";
+
+      // ==========================================
+      // PHASE 1: USER INPUT (0ms)
+      // ==========================================
+      setPipelineStageState(1, "active");
+      statusText.innerHTML = `Stage 1/5: <span class="highlight">USER INPUT</span> - Capturing raw text prompt`;
+      progressBar.style.width = "20%";
+      progressPercent.textContent = "20%";
+
+      inspectorTitle.innerHTML = `🔍 Stage 1 Inspector: Raw Prompt String`;
+      inspectorContent.innerHTML = `
+        <div style="font-family: var(--font-mono); background: rgba(0,0,0,0.3); padding: 8px 12px; border-radius: 4px; margin-bottom: 8px;">
+          "${escapeHtml(input)}"
+        </div>
+        <p><strong>Character Count:</strong> ${input.length} chars | <strong>Words:</strong> ${input.split(/\s+/).filter(Boolean).length} words</p>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Raw user text received and loaded into execution buffer.</p>
+      `;
+
+      // ==========================================
+      // PHASE 2: PROMPT PROCESSING (+1300ms)
+      // ==========================================
+      const t1 = setTimeout(() => {
+        setPipelineStageState(1, "completed");
+        setPipelineStageState(2, "active");
+        statusText.innerHTML = `Stage 2/5: <span class="highlight">PROMPT PROCESSING</span> - Formatting with Chat Template`;
+        progressBar.style.width = "40%";
+        progressPercent.textContent = "40%";
+
+        const formattedChat = `&lt;|im_start|&gt;system\nYou are a helpful educational AI assistant.&lt;|im_end|&gt;\n&lt;|im_start|&gt;user\n${escapeHtml(input)}&lt;|im_end|&gt;\n&lt;|im_start|&gt;assistant\n`;
+
+        inspectorTitle.innerHTML = `🔍 Stage 2 Inspector: Formatted Chat Template`;
+        inspectorContent.innerHTML = `
+          <div style="font-family: var(--font-mono); font-size: 0.8rem; background: rgba(0,0,0,0.35); padding: 10px; border-radius: 6px; white-space: pre-wrap; color: #a5b4fc; margin-bottom: 8px;">${formattedChat}</div>
+          <p><strong>Processing tasks completed:</strong> Applied ChatML role tags, attached system instructions, and prepared the assistant turn prompt.</p>
+        `;
+      }, 1300);
+      activeTimeouts.push(t1);
+
+      // ==========================================
+      // PHASE 3: TOKENIZATION (+2700ms)
+      // ==========================================
+      const t2 = setTimeout(() => {
+        setPipelineStageState(2, "completed");
+        setPipelineStageState(3, "active");
+        statusText.innerHTML = `Stage 3/5: <span class="highlight">TOKENIZATION</span> - Decomposing into subword tokens`;
+        progressBar.style.width = "60%";
+        progressPercent.textContent = "60%";
+
+        const tokens = tokenizeText(input);
+        document.getElementById("metricInputTokens").textContent = tokens.length;
+
+        inspectorTitle.innerHTML = `🔍 Stage 3 Inspector: Token Decomposition (${tokens.length} Tokens)`;
+        inspectorContent.innerHTML = `
+          <p style="margin-bottom: 6px;">The input was partitioned into <strong>${tokens.length} subword tokens</strong>:</p>
+          <div class="token-box-container" id="stage3TokenBox"></div>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px;">Each token is mapped to an internal integer vocabulary ID (e.g. ID #10423).</p>
+        `;
+
+        const stage3Box = document.getElementById("stage3TokenBox");
+        if (stage3Box) {
+          renderTokenPills(stage3Box, tokens);
+        }
+      }, 2700);
+      activeTimeouts.push(t2);
+
+      // ==========================================
+      // PHASE 4: LLM PROCESSING (+4300ms)
+      // ==========================================
+      const t3 = setTimeout(() => {
+        setPipelineStageState(3, "completed");
+        setPipelineStageState(4, "active");
+        statusText.innerHTML = `Stage 4/5: <span class="highlight">LLM PROCESSING</span> - Calculating Next-Token Probabilities`;
+        progressBar.style.width = "80%";
+        progressPercent.textContent = "80%";
+
+        inspectorTitle.innerHTML = `🔍 Stage 4 Inspector: Next-Token Prediction Probabilities`;
+        inspectorContent.innerHTML = `
+          <p>The neural network uses self-attention to predict the most likely candidate token to follow:</p>
+          <div class="prediction-bars">
+            <div class="pred-row">
+              <span class="pred-token">"Artificial"</span>
+              <div class="pred-bar-bg"><div class="pred-bar-fill" style="width: 76%;"></div></div>
+              <span class="pred-percent">76.4%</span>
+            </div>
+            <div class="pred-row">
+              <span class="pred-token">"The"</span>
+              <div class="pred-bar-bg"><div class="pred-bar-fill" style="width: 14%;"></div></div>
+              <span class="pred-percent">14.1%</span>
+            </div>
+            <div class="pred-row">
+              <span class="pred-token">"Computers"</span>
+              <div class="pred-bar-bg"><div class="pred-bar-fill" style="width: 6%;"></div></div>
+              <span class="pred-percent">6.2%</span>
+            </div>
+            <div class="pred-row">
+              <span class="pred-token">"Modern"</span>
+              <div class="pred-bar-bg"><div class="pred-bar-fill" style="width: 3%;"></div></div>
+              <span class="pred-percent">3.3%</span>
+            </div>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 8px;">The model samples the highest probability token and repeats the loop autoregressively.</p>
+        `;
+      }, 4300);
+      activeTimeouts.push(t3);
+
+      // ==========================================
+      // PHASE 5: GENERATED OUTPUT (+6000ms)
+      // ==========================================
+      const t4 = setTimeout(() => {
+        setPipelineStageState(4, "completed");
+        setPipelineStageState(5, "active");
+        statusText.innerHTML = `Stage 5/5: <span class="highlight">GENERATED OUTPUT</span> - Detokenizing and Streaming Response`;
+        progressBar.style.width = "100%";
+        progressPercent.textContent = "100%";
+
+        inspectorTitle.innerHTML = `🔍 Stage 5 Inspector: Detokenization Loop`;
+        inspectorContent.innerHTML = `
+          <p>Generated token IDs are looked up in the vocabulary table, converted back to characters, and streamed to the output panel.</p>
+        `;
+
+        const responseText = generateSimulatedResponse(input);
+        const outputTokens = tokenizeText(responseText);
+        const inputTokens = tokenizeText(input);
+
+        document.getElementById("metricOutputTokens").textContent = outputTokens.length;
+        document.getElementById("metricTotalTokens").textContent = inputTokens.length + outputTokens.length;
+        document.getElementById("metricLatency").textContent = `${Math.floor(210 + Math.random() * 70)} ms`;
+
+        streamOutputText(responseText, () => {
+          setPipelineStageState(5, "completed");
+          statusText.innerHTML = `🎉 <span style="color: #34d399;">Pipeline Execution Complete!</span> All 5 stages finished.`;
+          isPipelineRunning = false;
+          document.getElementById("btnRun").disabled = false;
+        });
+      }, 6000);
+      activeTimeouts.push(t4);
+    }
+
+    // WHAT THIS DOES: Reset functionality to restore the pipeline to its initial clean state
+    function resetPipeline() {
+      // Clear any pending timeouts
+      activeTimeouts.forEach(tId => clearTimeout(tId));
+      activeTimeouts = [];
+      isPipelineRunning = false;
+
+      // Re-enable Run button
+      document.getElementById("btnRun").disabled = false;
+      document.getElementById("validationAlert").classList.remove("visible");
+
+      // Reset stage cards
+      for (let i = 1; i <= 5; i++) {
+        setPipelineStageState(i, "waiting");
+      }
+
+      // Reset connector and progress bar
+      const connector = document.getElementById("pipelineConnectorFill");
+      if (connector) connector.style.width = "0%";
+
+      document.getElementById("progressBarFill").style.width = "0%";
+      document.getElementById("progressPercentage").textContent = "0% Complete";
+      document.getElementById("pipelineStatusText").innerHTML = `Status: <span class="highlight">Ready for input</span>`;
+
+      // Reset inspector
+      document.getElementById("inspectorTitle").innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="16" x2="12" y2="12"></line>
+          <line x1="12" y1="8" x2="12.01" y2="8"></line>
+        </svg>
+        Current Stage Inspector
+      `;
+      document.getElementById("inspectorContent").innerHTML = `
+        Enter your prompt above and click <strong>"Run Pipeline"</strong> to see each stage generate its dynamic data here.
+      `;
+
+      // Reset output stream and metrics
+      document.getElementById("outputTextStream").textContent = "The simulated response will appear here as tokens are generated...";
+      const badge = document.getElementById("outputStatusBadge");
+      badge.className = "output-badge";
+      badge.textContent = "Idle";
+
+      document.getElementById("metricInputTokens").textContent = "0";
+      document.getElementById("metricOutputTokens").textContent = "0";
+      document.getElementById("metricTotalTokens").textContent = "0";
+      document.getElementById("metricLatency").textContent = "-- ms";
+    }
+
+    // WHAT THIS DOES: Interactive stage modal controller for opening and closing deep-dive details
+    function openStageModal(stageNumber) {
+      const stageData = STAGE_DETAILS[stageNumber];
+      if (!stageData) return;
+
+      document.getElementById("modalStageTag").textContent = stageData.tag;
+      document.getElementById("modalStageTitle").textContent = stageData.title;
+      document.getElementById("modalWhatHappens").textContent = stageData.what;
+      document.getElementById("modalConcepts").textContent = stageData.concepts;
+      document.getElementById("modalAnalogy").textContent = stageData.analogy;
+
+      const modal = document.getElementById("stageDetailModal");
+      modal.classList.add("open");
+      document.body.style.overflow = "hidden"; // Prevent background scroll
+    }
+
+    function closeStageModal() {
+      const modal = document.getElementById("stageDetailModal");
+      modal.classList.remove("open");
+      document.body.style.overflow = "auto";
+    }
+
+    function closeModalOnBackdrop(event) {
+      if (event.target.id === "stageDetailModal") {
+        closeStageModal();
+      }
+    }
+
+    // Close modal on Escape key press
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closeStageModal();
+      }
+    });
+
+    // WHAT THIS DOES: Populate prompt input with sample prompt and update character counter
+    function loadSamplePrompt(sampleText) {
+      const promptInput = document.getElementById("promptInput");
+      promptInput.value = sampleText;
+      updateCharCounter();
+      document.getElementById("validationAlert").classList.remove("visible");
+      promptInput.focus();
+    }
+
+    function updateCharCounter() {
+      const input = document.getElementById("promptInput");
+      const counter = document.getElementById("charCounter");
+      counter.textContent = `${input.value.length} characters`;
+    }
+
+    // WHAT THIS DOES: Live token explorer input handler to decompose any typed text into tokens
+    function updateTokenExplorer() {
+      const inputVal = document.getElementById("tokenExplorerInput").value;
+      const box = document.getElementById("tokenExplorerBox");
+      const tokenCountElem = document.getElementById("explorerTokenCount");
+      const charCountElem = document.getElementById("explorerCharCount");
+      const ratioElem = document.getElementById("explorerRatio");
+
+      const tokens = tokenizeText(inputVal);
+      renderTokenPills(box, tokens);
+
+      const charCount = inputVal.length;
+      const tokenCount = tokens.length;
+      tokenCountElem.textContent = tokenCount;
+      charCountElem.textContent = charCount;
+
+      if (tokenCount > 0) {
+        ratioElem.textContent = (charCount / tokenCount).toFixed(2);
+      } else {
+        ratioElem.textContent = "0";
+      }
+    }
+
+    // Helper to safely escape HTML characters in strings
+    function escapeHtml(str) {
+      return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    // WHAT THIS DOES: Application initialization and setup of event listeners
+    window.addEventListener("DOMContentLoaded", () => {
+      const promptInput = document.getElementById("promptInput");
+      promptInput.addEventListener("input", updateCharCounter);
+
+      const tokenExplorerInput = document.getElementById("tokenExplorerInput");
+      tokenExplorerInput.addEventListener("input", updateTokenExplorer);
+
+      // Initial render for token explorer
+      updateTokenExplorer();
+      updateCharCounter();
+    });
+  </script>
+</body>
+</html>
